@@ -144,7 +144,7 @@ def create_html(coeffs, html_filename):
         data.append(freq_flux)
 
     f_out = open(html_filename, "w")
-    with open("template.html") as f_template:
+    with open("index.template") as f_template:
         for line in f_template:
             if "$source" in line:
                 line = line.replace("$source", source_name)
