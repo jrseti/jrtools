@@ -56,7 +56,7 @@
 #            }]
 #        }
 
-import json
+import hjson
 
 class Page(object):
     """Class to represent one HTML page in which the graphs will reside.
@@ -134,54 +134,35 @@ class Page(object):
 class Chart:
 
 
-    def __init__(self, title, chart_type, series_list, **kwargs=None):
+    def __init__(self, title, chart_type, series_list, **kwargs):
 
         self.chart = {}
 
-        self.set_title(title)
-        self.set_series(series_list)
-        self.set_chart_type(chart_type)
-
-        if kwargs is not None:
-            self.set_credits(kwargs.get('credits', None))
-            self.set_subtitle(kwargs.get('subtitle', None))
-            self.set_xaxis(kwargs.get('xaxis', None))
-
-    def toJSON(self):
-        return json.dumps(self.chart)
-
-    def set_title(self, title_text):
-        self.chart['title'] = { 'text' : title_text } 
-
-    def set_series(self, series_list):
-        self.chart['series'] = series_list 
-
-    def set_chart_type(self, chart_type):
         self.chart['chart'] = { 'type' : chart_type }
+        self.chart['title'] = { 'text' : title }
+        self.chart['series'] = series_list
+
+        for key, value in kwargs.items():
+            self.chart[key] = value
+
+    def _set_defaults():
+        self.chart['credits'] = { 'text' : 'jrtools', 'href' : 'http://github.com/jrseti/jrtools' }
+        self.chart['xAxis'] = { 'type' : 'datetime', 'title' : 'X Axis' }
 
     def set_credits(self, credits):
-        if credits is None:
-            self.chart['credits'] = { 'text' : 'jrtools', 'href' : 'http://github.com/jrseti/jrtools' } 
-            return
         self.chart['credits'] = credits
 
     def set_subtitle(self, subtitle):
-        if subtitle is None:
-            return
         self.chart['subtitle'] = { 'text' : subtitle } 
 
     def set_xaxis(self, xaxis):
-        if xaxis is None:
-            self.chart['xAxis'] = { 'type' : 'datetime', 'title' : 'X Axis' } 
-            return
         self.chart['xAxis'] = xaxis
+
+    def toJSON(self, insert_newlines=False):
+        json_string = json.dumps(self.chart, indent=2)
+        return json_string
 
 series = [{ 'name' : 'test series', 'data' : [1,2,3]}]
 
-kwargs = {}
-kwargs['chart'] = { 'type' : 'scatter' }
-kwargs['credits'] = { 'text' : 'These are the credits' }
-kwargs['subtitle'] = 'This is a subtitle'
-kwargs['xaxis'] = {"type": "datetime", "title": "This is the X Axis"}
-chart = QuickChart('Test Title', 'scatter', series,  **kwargs)
+chart = Chart('Test Title', 'scatter', series )
 print(chart.toJSON())
