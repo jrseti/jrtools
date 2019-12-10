@@ -1,62 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-"
-
-#CHART_TEMPLATE = {
-#        chart: {
-#            type: 'spline'
-#            },
-#        credits: {
-#            text: 'jrseti',
-#            href: 'https://github.com/jrseti/jrtools'
-#            },
-#        title: {
-#            text: ''
-#            },
-#        subtitle: {
-#            text: 'Based on Perley and Butler, 2016: https://arxiv.org/pdf/1609.05940.pdf'
-#            },
-#        xAxis: {
-#            type:'logarithmic',
-#            title: {
-#                text: 'Frequency in GHz'
-#                }
-#            },
-#        yAxis: {
-#            type:'logarithmic',
-#            title: {
-#                text: 'Jy'
-#                },
-#            labels: {
-#                formatter: function () {
-#                    return this.value;
-#                    }
-#                }
-#            },
-#        tooltip: {
-#            crosshairs: true,
-#            shared: true,
-#            headerFormat: '{point.x:.3f} GHz<br>',
-#            pointFormat: '{point.y} Jy',
-#            },
-#        plotOptions: {
-#            spline: {
-#                marker: {
-#                    radius: 0,
-#                    lineColor: '#666666',
-#                    lineWidth: 1
-#                    }
-#                }
-#            },
-#        series: [{
-#            name: 'Flux Density of $source',
-#            marker: {
-#                symbol: 'square'
-#                },
-#            data: $data
-#            }]
-#        }
-
-import hjson
+import json
 
 class Page(object):
     """Class to represent one HTML page in which the graphs will reside.
@@ -131,38 +75,97 @@ class Page(object):
         return html_text
 
 
-class Chart:
+class Chart(object):
 
+    def __init__(self):
+        self._chart = {}
+        self._set_defaults()
 
-    def __init__(self, title, chart_type, series_list, **kwargs):
+    def _set_defaults(self):
+        self.set_credits()
+        self.set_chart()
+        self.set_title()
+        self.set_subtitle()
+        self.set_xaxis()
+        self.set_yaxis()
+        self.set_tooltip()
+        self.set_plot_options()
 
-        self.chart = {}
+    def set_chart(self, chart_type='line', zoom_type='x'):
+        if chart_type is None:
+            self._chart.pop('chart', None)
+        self._chart['chart'] = { 'type' : chart_type, 'zoomType' : zoom_type }
 
-        self.chart['chart'] = { 'type' : chart_type }
-        self.chart['title'] = { 'text' : title }
-        self.chart['series'] = series_list
+    def set_credits(self, text='jrtools', href='http://github.com/jrseti/jrtools'):
+        self._chart['credits'] = { 'text' : text, 'href' : href }
 
-        for key, value in kwargs.items():
-            self.chart[key] = value
+    def set_title(self, title='Chart Title'):
+        self._chart['title'] = { 'text' : title } 
 
-    def _set_defaults():
-        self.chart['credits'] = { 'text' : 'jrtools', 'href' : 'http://github.com/jrseti/jrtools' }
-        self.chart['xAxis'] = { 'type' : 'datetime', 'title' : 'X Axis' }
+    def set_subtitle(self, subtitle=None):
+        if subtitle is None:
+            self._chart.pop('subtitle', None)
+            return
+        self._chart['subtitle'] = { 'text' : subtitle } 
 
-    def set_credits(self, credits):
-        self.chart['credits'] = credits
+    def set_xaxis(self, axis_type='linear', text='Need to set X axis text'):
+        #if axis_type is not 'xx':
+        #    raise Exception('axis_type %s not valid. Valid types are linear, scatter, datetime')
+        self._chart['xAxis'] = dict()
+        self._chart['xAxis']['type'] = axis_type
+        self._chart['xAxis']['title'] = dict()
+        self._chart['xAxis']['title']['text'] = text
 
-    def set_subtitle(self, subtitle):
-        self.chart['subtitle'] = { 'text' : subtitle } 
+    def set_yaxis(self, axis_type='linear', text='Need to set Y axis text'):
+        self._chart['yAxis'] = dict()
+        self._chart['yAxis']['type'] = axis_type
+        self._chart['yAxis']['title'] = dict()
+        self._chart['yAxis']['title']['text'] = text
 
-    def set_xaxis(self, xaxis):
-        self.chart['xAxis'] = xaxis
+    def set_tooltip(self, tooltip_dict=None):
+        if tooltip_dict is None:
+            self._chart.pop('tooltip', None)
+            return
+        self._chart['tooltip'] = tooltip_dict
+
+    def set_plot_options(self, plot_options_dict=None):
+        if plot_options_dict is None:
+            self._chart.pop('plotOptions', None)
+            return
+        self._chart['plotOptions'] = plot_options_dict
+
+    def add_series(self, series):
+        series_list = self._chart.get('series', list())
+        series_list.append(series.get())
+        self._chart['series'] = series_list
 
     def toJSON(self, insert_newlines=False):
-        json_string = json.dumps(self.chart, indent=2)
-        return json_string
+        if 'series' in self._chart:
+            json_string = json.dumps(self._chart, indent=2)
+            return json_string
+        raise Exception('The series has not been defined. Cannot create a valid chart.')
 
-series = [{ 'name' : 'test series', 'data' : [1,2,3]}]
+class Series:
 
-chart = Chart('Test Title', 'scatter', series )
+    def __init__(self, name, data, marker=None):
+        self._series = dict()
+        self._series['name'] = name
+        self._series['data'] = data
+        if marker is not None:
+            self._series['marker'] = marker
+
+    def set_type(series_type):
+        self._series['type'] = series_type
+
+    def get(self):
+        return self._series
+
+
+data = [[1,1],[2,2],[3,3]]
+marker = { 'marker' : { 'symbol' : 'circle', 'radius' : 0 } }
+series = Series('test series', data, marker)
+chart = Chart()
+chart.set_title("My First Chart")
+chart.add_series(series)
+page = Page()
 print(chart.toJSON())
