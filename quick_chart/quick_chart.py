@@ -14,6 +14,7 @@ class Page(object):
         self.html_filename = html_filename
         self.charts = []
 
+    @staticmethod
     def _get_header_text():
         """Create the HTML file segment before the graphs.
         
@@ -25,15 +26,14 @@ class Page(object):
         header_text  = '<!DOCTYPE html>\n'
         header_text += '<html>\n'
         header_text += '<head>\n'
-        header_text += '<script src="http://ajax.googleapis.com/ajax/libs/\
-                        jquery/1.8.2/jquery.min.js"></script>\n'
-        header_text += '<script src="http://code.highcharts.com/highcharts.js"\
-                        ></script>\n'
+        header_text += '<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>\n'
+        header_text += '<script src="http://code.highcharts.com/highcharts.js"></script>\n'
         header_text += '</head>\n'
         header_text += '<body>\n'
 
         return header_text
 
+    @staticmethod
     def _get_footer_text():
         """Create the HTML file segment at the end after the graphs
 
@@ -47,7 +47,7 @@ class Page(object):
 
         return footer_text
 
-    def add_chart(chart):
+    def add_chart(self, chart):
         """Add a chart to the list of charts in this page
 
         Args:
@@ -57,7 +57,7 @@ class Page(object):
 
         self.charts.append(chart)
 
-    def to_html():
+    def to_html(self):
         """Create the HTML text that can be viewed in a browser.
 
         Returns:
@@ -65,14 +65,33 @@ class Page(object):
 
         """
 
-        html_text = _get_header_text()
+        indent = '  '
 
-        for graph in self.graphs:
-            html_text += graph.to_javasctipt_text()
+        html_text = Page._get_header_text()
 
-        html_text += _get_footer_text()
+        for index, chart in enumerate(self.charts):
+            html_text += '  <div id="container%d" style="display:block; margin-left:auto;margin-right: auto; width:800px; height:400px;"></div>\n'%index
+            html_text += Page._indent(2, "<script>\n")
+            html_text += Page._indent(4,'$(function () {\n')
+            html_text += Page._indent(6,'$("#container%d").highcharts(\n'%index)
+            for line in chart.to_json_string().split('\n'):
+                html_text += Page._indent(8, line)
+                html_text += '\n'
+            html_text += Page._indent(4, ');\n')
+            html_text += Page._indent(4, '});\n')
+            html_text += Page._indent(2, "</script>\n")
+
+        html_text += Page._get_footer_text()
 
         return html_text
+
+    @staticmethod
+    def _indent(num_spaces, text):
+        indented_string = ""
+        spaces_list = list()
+        for indent in range(0, num_spaces):
+            spaces_list.append(' ')
+        return ''.join(spaces_list) + text
 
 
 class Chart(object):
@@ -139,7 +158,7 @@ class Chart(object):
         series_list.append(series.get())
         self._chart['series'] = series_list
 
-    def toJSON(self, insert_newlines=False):
+    def to_json_string(self, insert_newlines=False):
         if 'series' in self._chart:
             json_string = json.dumps(self._chart, indent=2)
             return json_string
@@ -167,5 +186,7 @@ series = Series('test series', data, marker)
 chart = Chart()
 chart.set_title("My First Chart")
 chart.add_series(series)
-page = Page()
-print(chart.toJSON())
+page = Page('Chart Test', 'This is my chart test', 'chart_test1.html')
+page.add_chart(chart)
+page.add_chart(chart)
+print(page.to_html())
