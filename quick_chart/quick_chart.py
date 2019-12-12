@@ -8,63 +8,39 @@
 
    Example that creates the text of an HTML file containing a chart:
 
-    data = [[1, 1],
-            [2, 2], [3, 3]]  #yapf: disable
-    marker = {'marker': {'symbol': 'circle', 'radius': 0}}
-    series = Series('test series', data, marker)
+    #Create a Chart object and set the title
     chart = Chart()
     chart.set_title("My First Chart")
+
+    #Create a data series
+    data = [[1, 1], [2, 2], [3, 3]]
+    marker = {'marker': {'symbol': 'circle', 'radius': 0}}
+    series = Series('test series', data, marker)
+
+    #Add the series to the chart
     chart.add_series(series)
+
+    #Create an HTML page object
     page = Page('Chart Test', 'This is my chart test', 'chart_test1.html')
+
+    #Add the chart to the HTML page
     page.add_chart(chart)
-    page.add_chart(chart)
-    print(page.to_html())
+
+    #Output the HTML to a file
+    page.to_file("testxx.html")
 
 """
+import copy
 import json
 
 
 class Page():
     """Class to represent one HTML page in which the charts will reside. """
-    def __init__(self, title_text, heading_text, html_filename):
+
+    def __init__(self, title_text, heading_text):
         self.title_text = title_text
-        self.heading_text = heading_text
-        self.html_filename = html_filename
+        self._heading_text = heading_text
         self._charts = []
-
-    @staticmethod
-    def _get_header_text():
-        """Create the HTML file segment before the graphs.
-
-        Returns:
-            string: The HTML text to go before the graphs.
-
-        """
-
-        header_text = '<!DOCTYPE html>\n'
-        header_text += '<html>\n'
-        header_text += '<head>\n'
-        header_text += '<script src="http://ajax.googleapis.com/ajax/'\
-                        'libs/jquery/1.8.2/jquery.min.js"></script>\n'
-        header_text += '<script src="http://code.highcharts.com/highcharts.js"></script>\n'
-        header_text += '</head>\n'
-        header_text += '<body>\n'
-
-        return header_text
-
-    @staticmethod
-    def _get_footer_text():
-        """Create the HTML file segment at the end after the graphs
-
-        Returns:
-            string: The HTML text to go at the end after the graphs.
-
-        """
-
-        footer_text = '\n\n</body>\n\n'
-        footer_text = '</html>'
-
-        return footer_text
 
     def add_chart(self, new_chart):
         """Add a chart to the list of charts in this page
@@ -80,16 +56,16 @@ class Page():
         """Create the HTML text that can be viewed in a browser.
 
         Returns:
-            string: HTML text to display in a browser.
+            str: HTML text to display in a browser.
 
         """
 
-        html_text = Page._get_header_text()
+        html_text = self._get_header_text()
 
         for index, chart in enumerate(self._charts):
             html_text += '  <div id="container%d" style="display:block;'\
-                         'margin-left:auto;margin-right: auto; width:800px;'\
-                         'height:400px;"></div>\n'%index
+                         'margin-left:auto;margin-right: auto; width:%dpx;'\
+                         'height:%dpx;"></div>\n'%(index, chart.width, chart.height)
             html_text += Page._indent(2, "<script>\n")
             html_text += Page._indent(4, '$(function () {\n')
             html_text += Page._indent(
@@ -105,16 +81,68 @@ class Page():
 
         return html_text
 
+    def to_file(self, filename):
+        """Create the HTML and save to a file.
+
+        Args:
+            filename (str): The full path output filename.
+
+        Raises:
+            Exception: The result of opening and writing to the file.
+
+        """
+
+        with open(filename, 'w') as out_file:
+            html_text = self.to_html()
+            out_file.write(html_text)
+            out_file.close()
+
+
+    def _get_header_text(self):
+        """Create the HTML file segment before the charts.
+
+        Returns:
+            str: The HTML text to go before the charts.
+
+        """
+
+        header_text = '<!DOCTYPE html>\n'
+        header_text += '<html>\n'
+        header_text += '<head>\n'
+        header_text += '<script src="http://ajax.googleapis.com/ajax/'\
+                        'libs/jquery/1.8.2/jquery.min.js"></script>\n'
+        header_text += '<script src="http://code.highcharts.com/highcharts.js"></script>\n'
+        header_text += '</head>\n'
+        header_text += '<body>\n'
+        if self._heading_text is not None:
+            header_text += '<h1 style="text-align:center;">%s</h1>\n'%self._heading_text
+
+        return header_text
+
+    @staticmethod
+    def _get_footer_text():
+        """Create the HTML text at the end of the file.
+
+        Returns:
+            str: The HTML text to go at the end after the charts.
+
+        """
+
+        footer_text = '\n\n</body>\n\n'
+        footer_text = '</html>'
+
+        return footer_text
+
     @staticmethod
     def _indent(num_spaces, text):
         """Prepend spaces to a string.
 
         Args:
             num_spaces (int): The number of spaces to prepent to the string.
-            text (string): The text to be indented.
+            text (str): The text to be indented.
 
         Returns:
-            string: The text with the spaces prepended.
+            str: The text with the spaces prepended.
         """
 
         return (' ' * num_spaces) + text
@@ -125,6 +153,8 @@ class Chart():
     def __init__(self):
         self._chart = {}
         self._set_defaults()
+        self._width = 800
+        self._height = 400
 
     def _set_defaults(self):
         self.set_credits()
@@ -136,11 +166,48 @@ class Chart():
         self.set_tooltip()
         self.set_plot_options()
 
+    @property
+    def width(self):
+        """Get the defined width of the chart.
+        Returns:
+            int: The width of the chart.
+        """
+
+        return self._width
+
+    @property
+    def height(self):
+        """Get the defined height of the chart.
+        Returns:
+            int: The height of the chart.
+        """
+
+        return self._height
+
+    def set_width(self, width):
+        """Set the width of the chart.
+
+        Args:
+            width (int): The width in pixels
+        """
+
+        self._width = width
+
+    def set_height(self, height):
+        """Set the height of the chart.
+
+        Args:
+            height (int): The height in pixels
+        """
+
+        self._height = height
+
+
     def set_chart(self, chart_type='line', zoom_type='x'):
         """Set the type and optionally the zoom type of this chart.
 
         Args:
-            chart_type (string)
+            chart_type (str)
         """
         if chart_type is None:
             self._chart.pop('chart', None)
@@ -152,8 +219,8 @@ class Chart():
         """Set the credits.
 
         Args:
-            text (string): The text element of the credit.
-            href (string): THe URL of the credit text as a link.
+            text (str): The text element of the credit.
+            href (str): THe URL of the credit text as a link.
         """
 
         self._chart['credits'] = {'text': text, 'href': href}
@@ -162,7 +229,7 @@ class Chart():
         """Set the title of the chart.
 
         Args:
-            title (string): THe title of the chart.
+            title (str): The title of the chart.
         """
 
         self._chart['title'] = {'text': title}
@@ -171,7 +238,7 @@ class Chart():
         """Set the subtitle of the chart.
 
         Args:
-            sustitle (string): The subtitle of the chart.
+            sustitle (str): The subtitle of the chart.
         """
 
         if subtitle is None:
@@ -183,8 +250,8 @@ class Chart():
         """Set the x axis type and text.
 
         Args:
-            axis_type (string): The type of the x axis.
-            text (string): The x axis label.
+            axis_type (str): The type of the x axis.
+            text (str): The x axis label.
         """
 
         self._chart['xAxis'] = dict()
@@ -196,8 +263,8 @@ class Chart():
         """Set the y axis yype and text.
 
         Args:
-            axis_type (string): The type of the y axis.
-            text (string): The y axis label.
+            axis_type (str): The type of the y axis.
+            text (str): The y axis label.
         """
 
         self._chart['yAxis'] = dict()
@@ -240,7 +307,7 @@ class Chart():
         """
 
         series_list = self._chart.get('series', list())
-        series_list.append(series.get())
+        series_list.append(series.series)
         self._chart['series'] = series_list
 
     def to_json_string(self):
@@ -248,7 +315,7 @@ class Chart():
         chart.
 
         Returns:
-            string: the string representation of this chart.
+            str: the string representation of this chart.
         Raises:
             Exception: If this chart does not contain a series.
         """
@@ -261,14 +328,18 @@ class Chart():
 
 
 class Series:
-    """Class to construct and represent one data series for a chart."""
+    """Class to construct and represent one data series for a chart.
+
+    Attributes:
+        series (dict): The dictionary representation of the series.
+    """
 
     def __init__(self, name, data, marker=None):
         """Constructor.
 
         Args:
-            name (string): The name of the series. This name will be the name
-                           as displayed in the graph.
+            name (str): The name of the series. This name will be the name
+                           as displayed in the chart.
             data (list): The data for this series.
             marker (dict): Optional marker definition for the series.
 
@@ -280,19 +351,8 @@ class Series:
         if marker is not None:
             self._series['marker'] = marker
 
-    def set_type(self, series_type):
-        """Set the type of the series. This is optional and used only when
-        there are multiple series in a graph and they are of a different
-        type.
-
-        Args:
-            series_type (string): The type of the series.
-
-        """
-
-        self._series['type'] = series_type
-
-    def get(self):
+    @property
+    def series(self):
         """Retrieve tis series
 
         Returns:
@@ -301,6 +361,18 @@ class Series:
         """
 
         return self._series
+
+    def set_series_type(self, series_type):
+        """Set the type of the series. This is optional and used only when
+        there are multiple series in a chart and they are of a different
+        type.
+
+        Args:
+            value (str): The type of the series.
+
+        """
+
+        self._series['type'] = series_type
 
 def main():
     """Function to test the main functionality of this module."""
@@ -311,10 +383,16 @@ def main():
     chart = Chart()
     chart.set_title("My First Chart")
     chart.add_series(series)
-    page = Page('Chart Test', 'This is my chart test', 'chart_test1.html')
+    page = Page('Chart Test', 'This is my chart test')
     page.add_chart(chart)
-    page.add_chart(chart)
-    print(page.to_html())
+    chart2 = copy.deepcopy(chart)
+    chart2.set_width(800)
+    chart2.set_height(400)
+    page.add_chart(chart2)
+    #print(page.to_html())
+
+
+    page.to_file("testxx.html")
 
 if __name__ == '__main__':
     main()
