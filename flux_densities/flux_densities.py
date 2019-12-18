@@ -25,6 +25,8 @@ from math import log
 
 import webbrowser
 
+import quick_chart as qc
+
 # log(S) = a0 + a1 log(νG) + a2[log(νG)]2 + a3[log(νG)]3 + · · ·
 
 _COEFF_TABLE = [
@@ -193,6 +195,17 @@ def main():
               (source_name, freq_mhz, flux_jy))
 
     if args.chart is not None:
+
+        # If user secified "all" as the source name, this means create a chart
+        # of all the sources
+        if source_name is 'all':
+            html_filename = "file://%s/%s"%(os.getcwd(), 'all_sources_flux.html')
+            create_all_chart()
+            if args.browser is True:
+                webbrowser.open(html_filename, 1)
+            return
+
+        # Create a chart of the one source specified by the user.
         source_name = " ".join(args.chart)
         coeffs = get_source_coeffs(source_name)
         html_filename = source_name.replace(" ", "_").lower() + "_flux.html"
@@ -200,6 +213,16 @@ def main():
         print(html_filename)
         if args.browser is True:
             webbrowser.open("file://%s/%s"%(os.getcwd(), html_filename), 1)
+
+def create_all_chart(html_filename):
+    """Create a chart of all the sources
+
+    Args:
+        html_filename (str): The name of the HTML file to be created.
+
+    """
+
+    page = qc.Page('Flux Densities', 'Flux Densities', html_filename)
 
 if __name__ == '__main__':
     main()

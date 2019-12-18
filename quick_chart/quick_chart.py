@@ -11,7 +11,7 @@ class Page(object):
 
         self.title_text = title_text
         self.heading_text = heading_text
-        self.html_filename = html_filename
+        self._html_filename = html_filename
         self.charts = []
 
     @staticmethod
@@ -84,6 +84,14 @@ class Page(object):
         html_text += Page._get_footer_text()
 
         return html_text
+
+    def save_to_file(self):
+        """Save the HTML for this page to a file."""
+
+        f_out = open(self._html_filename)
+        f_out.write(self.to_html)
+        f_out.close()
+
 
     @staticmethod
     def _indent(num_spaces, text):
@@ -180,13 +188,20 @@ class Series:
         return self._series
 
 
-data = [[1,1],[2,2],[3,3]]
-marker = { 'marker' : { 'symbol' : 'circle', 'radius' : 0 } }
-series = Series('test series', data, marker)
-chart = Chart()
-chart.set_title("My First Chart")
-chart.add_series(series)
-page = Page('Chart Test', 'This is my chart test', 'chart_test1.html')
-page.add_chart(chart)
-page.add_chart(chart)
-print(page.to_html())
+def main():
+    data = [[1,1],[2,2],[3,3]]
+    data2 = [[1,2],[2,3],[3,6]]
+    marker = { 'marker' : { 'symbol' : 'circle', 'radius' : 0 } }
+    series = Series('test series', data, marker)
+    series2 = Series('test series 2', data2, marker)
+    chart = Chart()
+    chart.set_title("My First Chart")
+    chart.add_series(series)
+    chart.add_series(series2)
+    page = Page('Chart Test', 'This is my chart test', 'chart_test1.html')
+    page.add_chart(chart)
+    page.add_chart(chart)
+    print(page.to_html())
+
+if __name__ == '__main__':
+    main()

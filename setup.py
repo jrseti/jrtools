@@ -9,7 +9,7 @@ install_requires = []
 setup(
     name='jrtools',
     version='1.0',
-    packages=['flux_densities'],
+    packages=['flux_densities', 'quick_chart'],
     install_requires=install_requires,
     url='https://github.com/jrseti/jrtools',
     license='MIT',
