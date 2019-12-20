@@ -10,6 +10,11 @@ setup(
     name='jrtools',
     version='1.0',
     packages=['flux_densities', 'quick_chart'],
+    entry_points={
+        'console_scripts': [
+            'flux_densities=flux_densities:main',
+        ],
+    },
     install_requires=install_requires,
     url='https://github.com/jrseti/jrtools',
     license='MIT',

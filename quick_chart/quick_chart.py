@@ -392,7 +392,7 @@ def main():
     chart.set_title("My First Chart")
     chart.add_series(series)
     chart.add_series(series2)
-    page = Page('Chart Test', 'This is my chart test', 'chart_test1.html')
+    page = Page('Chart Test', 'This is my chart test')
     page.add_chart(chart)
     page.add_chart(chart)
     print(page.to_html())
