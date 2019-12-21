@@ -10,6 +10,11 @@ setup(
     packages=find_namespace_packages(include=['jrtools.*']),
     version='1.0',
     install_requires=install_requires,
+    entry_points={
+        'console_scripts': [
+            'flux_densities=jrtools.flux_densities:main',
+        ],
+    },
     url='https://github.com/jrseti/jrtools',
     license='MIT',
     author='Jon Richards',
