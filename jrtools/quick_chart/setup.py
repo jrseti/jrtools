@@ -1,14 +1,15 @@
 """
 setup.py -- setup script for use of packages.
 """
-from setuptools import setup, find_namespace_packages
+
+from setuptools import setup
 
 install_requires = []
 
 setup(
-    name='jrtools',
-    packages=find_namespace_packages(include=['jrtools.*']),
+    name='quick_chart',
     version='1.0',
+    packages=['quick_chart'],
     install_requires=install_requires,
     url='https://github.com/jrseti/jrtools',
     license='MIT',

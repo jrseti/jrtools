@@ -1,14 +1,20 @@
 """
 setup.py -- setup script for use of packages.
 """
-from setuptools import setup, find_namespace_packages
+
+from setuptools import setup
 
 install_requires = []
 
 setup(
-    name='jrtools',
-    packages=find_namespace_packages(include=['jrtools.*']),
+    name='flux_densities',
     version='1.0',
+    packages=['flux_densities'],
+    entry_points={
+        'console_scripts': [
+            'flux_densities=flux_densities:main',
+        ],
+    },
     install_requires=install_requires,
     url='https://github.com/jrseti/jrtools',
     license='MIT',
