@@ -25,7 +25,7 @@ from math import log
 
 import webbrowser
 
-import quick_chart as qc
+import jrtools.quick_chart as qc
 
 # log(S) = a0 + a1 log(νG) + a2[log(νG)]2 + a3[log(νG)]3 + · · ·
 
