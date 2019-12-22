@@ -1,8 +1,14 @@
 """
 setup.py -- setup script for use of packages.
 """
+import sys
 from setuptools import setup
 
+# Restrict to a fairly recent python version
+if sys.version_info < (3,6):
+    sys.exit('Sorry, Python < 3.6 is not supported')
+
+# Get the list of requirements
 with open('requirements.txt') as f:
     requirements = f.read().splitlines()
 
@@ -12,7 +18,6 @@ with open('requirements.txt') as f:
 # on some pthon distributions. Listing them all manually is better anyway.
 setup(
     name='jrtools',
-    python_requires='>3.5.2',
     packages=['jrtools.flux_densities', 'jrtools.quick_chart'],
     version='1.0',
     install_requires=requirements,
