@@ -12,6 +12,7 @@ with open('requirements.txt') as f:
 # on some pthon distributions. Listing them all manually is better anyway.
 setup(
     name='jrtools',
+    python_requires='>3.5.2',
     packages=['jrtools.flux_densities', 'jrtools.quick_chart'],
     version='1.0',
     install_requires=requirements,
