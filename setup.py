@@ -1,7 +1,7 @@
 """
 setup.py -- setup script for use of packages.
 """
-from setuptools import setup, find_namespace_packages
+from setuptools import setup
 
 with open('requirements.txt') as f:
     requirements = f.read().splitlines()
