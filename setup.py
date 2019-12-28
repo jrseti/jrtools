@@ -34,6 +34,6 @@ setup(
     author='Jon Richards',
     author_email='jrseti@gmail.com',
     description='Various Python tools and applications by Jon Richards, jrseti@gmail.com',
-    test_suite='nose.collector',
-    tests_require=['nose']
+    setup_requires=['pytest-runner'],
+    tests_require=['pytest']
 )
