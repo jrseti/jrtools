@@ -2,6 +2,8 @@
 setup.py -- setup script for use of packages.
 """
 import sys
+import os
+from os import path
 from setuptools import setup
 
 # Restrict to a fairly recent python version
@@ -9,6 +11,7 @@ if sys.version_info < (3,6):
     sys.exit('Sorry, Python < 3.6 is not supported')
 
 # Get the list of requirements
+#with open('/Users/jrichards/Projects/jrtools/requirements.txt') as f:
 with open('requirements.txt') as f:
     requirements = f.read().splitlines()
 
