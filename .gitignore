@@ -4,3 +4,9 @@
 *.egg-info
 *.html
 .tox
+.pytest_cache
+build
+dist
+env
+temp
+example.py
