@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-import flux_densities as fd
+from jrtools import flux_densities as fd
 
 class TestFluxDensities(TestCase):
 
