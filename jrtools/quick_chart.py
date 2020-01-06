@@ -30,8 +30,14 @@
     page.to_file("testxx.html")
 
 """
+import os
+
+import webbrowser
+import tempfile
+import time
 import copy
 import json
+
 
 
 class Page():
@@ -81,18 +87,11 @@ class Page():
 
         return html_text
 
-    def save_to_file(self):
-        """Save the HTML for this page to a file."""
-
-        f_out = open(self._html_filename)
-        f_out.write(self.to_html)
-        f_out.close()
-
     def to_file(self, filename):
         """Create the HTML and save to a file.
 
         Args:
-            filename (str): The full path output filename.
+            filename (str): The path output filename.
 
         Raises:
             Exception: The result of opening and writing to the file.
@@ -104,6 +103,65 @@ class Page():
             out_file.write(html_text)
             out_file.close()
 
+    def display_in_browser(self, html_filename=None, 
+                           browser_type=None, verbose=True, delay=5):
+        """Display this HTML page in a browser.
+
+        The following steps are performed:
+
+            1. The text of the HTML page containing the chart(s) is created.
+            2. If the value of html_filename is None create and open a 
+               temporary file and write the HTML text to this file. 
+            3. If the value of html_filename is not None create the file
+               and write the HTML text to this file.
+            4. Using the webbrowser module load the HTML file in a browser.
+            5. If html_filename was None and a temporary file was created,
+               remove this file.
+
+        Args:
+            html_filename (str): The name of the html file to create for 
+               loading in a browser. If none, create a temporary file that
+               is deleted after displayed.
+            browser_type (str): Specify the brower type to display the file.
+               If no value is provided the user's default browser is will 
+               used. See https://docs.python.org/2/library/webbrowser.html
+               for a list of available browsers. safari, chrome, and firefox
+               have been tested.
+            verbose (bool): Prints some extra information that may be of
+               interest to the user.
+            delay (int): If html_filename is None and the browser loads
+               delay temporary file, sleep this number of seconds before
+               deleting the temporary file. If the delay is not long enough
+               (depending on the speed of the bworser process on various
+               computers) the file may be deleted before the browser gets
+               around to displaying it. Defaults to 5 seconds.
+
+        """
+
+        # If html_filename is None, create the temporary file and load it.
+        if html_filename is None:
+            temporary_file = tempfile.NamedTemporaryFile(suffix='.html', delete=False, mode='w')
+            html_filename = temporary_file.name
+            self.to_file(html_filename)
+
+            url = "file://%s"%html_filename
+            webbrowser.get(browser_type).open(url, 1)
+            if verbose is True:
+                print('HTML file URL: %s'%url)
+                print('Sleeping 5 seconds to allow browser to render the chart...')
+            time.sleep(5)
+            os.unlink(html_filename)
+            if verbose is True:
+                print('%s deleted.'%html_filename)
+
+            return
+
+        # If html_filename is a filename (not None), load the file into a browser.
+        self.to_file(html_filename)
+        url = "file:///%s"%os.path.join(os.getcwd(), html_filename)
+        webbrowser.get(browser_type).open(url, 1)
+        if verbose is True:
+            print('HTML file URL: %s'%url)
 
     def _get_header_text(self):
         """Create the HTML file segment before the charts.
