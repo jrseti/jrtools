@@ -12,21 +12,32 @@ Example:
 
     Provide usage examples here
 
+Example:
+
+    To run the flux_densities script:
+
+        $ flux_densities --help
+
+    several ways to create a chart :
+
+        $ flux_densities "3c380" -c -b
+        $ flux_densities "3c380,Cassiopeia A,Cygnus A" -c -b
 
 """
 
-import os
 import sys
 
 import argparse
 from collections import namedtuple
 from math import log
-import time
 
-import quick_chart as qc
+try:
+    from . import quick_chart as qc
+except ImportError:
+    import quick_chart as qc
 
-# log(S) = a0 + a1 log(νG) + a2[log(νG)]2 + a3[log(νG)]3 + · · ·
 
+# The coefficients from Perley and Butler have been distilled into this list:
 _COEFF_TABLE = [
     ('J0133-3629', 1.0440, -0.6620, -0.225, 0.0, 0.0, 0.0, 267.0, 0.20, 4),
     ('3C48', 1.3253, -0.7553, -0.1914, 0.0498, 0.0, 0.0, 3.1, 0.05, 50),
@@ -48,7 +59,8 @@ _COEFF_TABLE = [
     ('Cygnus A', 3.3498, -1.0022, -0.225, 0.023, 0.043, 0.0, 1.9, 0.05, 12),
     ('3C444', 1.1064, -1.0050, -0.075, -0.0770, 0.0, 0.0, 5.7, 0.20, 12),
     ('Cassiopeia A', 3.3584, -0.7518, -0.035, -0.071, 0., 0.0, 2.1, 0.2, 4)
-    ]
+]
+
 
 def get_sources():
     """ Retrieve the list of available sources.
@@ -63,6 +75,7 @@ def get_sources():
 
     return sources
 
+
 def get_source_coeffs(source_name):
     """Retrieve the coefficients for a source
 
@@ -71,11 +84,13 @@ def get_source_coeffs(source_name):
             int tlist of sources.
 
     Returns:
-        namedtuple: the 10 coefficients for this source, otherwise None if the
+        namedtuple: the 10 coefficients for this source as a named tuple
+        'name a0 a1 a2 a3 a4 a5 fit fmin fmax', otherwise None if the
         source_name is invalid (not in the list).
 
     """
-    SourceCoeffs = namedtuple('SourceCoeffs', 'name a0 a1 a2 a3 a4 a5 fit fmin fmax')
+    SourceCoeffs = namedtuple(
+        'SourceCoeffs', 'name a0 a1 a2 a3 a4 a5 fit fmin fmax')
 
     for coeffs in _COEFF_TABLE:
         if coeffs[0].lower() == source_name.lower():
@@ -85,8 +100,8 @@ def get_source_coeffs(source_name):
 
     return None
 
-def get_jy(source, freq_ghz):
 
+def get_jy(source, freq_ghz):
     """Calculate the flux for a source at a given frequency.
 
     Args:
@@ -94,7 +109,7 @@ def get_jy(source, freq_ghz):
         freq_ghz (float): The frequncy in GHz.
 
     Returns:
-        float: Flux density of this source at the provided frequency,
+        float: Flux density n Jy of this source at the provided frequency,
             otherwise none if the source_name is invalid.
 
     """
@@ -104,6 +119,8 @@ def get_jy(source, freq_ghz):
     if coeffs is None:
         return None
 
+    # From the Perley and Butler paper, use this equation and the
+    # coefficients to calculate the flux in Jy.
     # log(S) = a0 + a1 log(νG) + a2[log(νG)]2 + a3[log(νG)]3 + · · ·
     jy_pre = (coeffs.a0 +
               coeffs.a1 * log(freq_ghz, 10) +
@@ -113,6 +130,7 @@ def get_jy(source, freq_ghz):
               coeffs.a5 * pow(log(freq_ghz, 10), 5.0))
 
     return pow(10.0, jy_pre)
+
 
 def _frange(start, stop, step):
     """ Generator that is a version of xrange that allows specifying a step.
@@ -132,36 +150,45 @@ def _frange(start, stop, step):
         yield value
         value += step
 
-def create_chart(sources, minx, maxx, y_axis_linear=False):
+
+def create_chart(sources, minf=1.0, maxf=20.0, y_axis_linear=False):
     """ Create a chart of the sources frequency vs Jy.
+
+    Usses the jrtools.quich_chart module.
 
     Args:
         sources (list): a list the sources to include in the chart.
-        minx (float): the X axis minimum. In GHz.
-        maxx (float): the X axis maximum. In GHz.
+        minf (float): the X axis minimum. In GHz.
+        maxf (float): the X axis maximum. In GHz.
         y_axis_linear (bool): if True the Y axis will be linear.
             Defaults to False (logarithmic).
 
     Returns:
         (Chart): the newly created Charts instance.
-    
+
     """
 
-    data = [];
+    # Construct a list of tuples. Each tuple is
+    # Index 0: the source name
+    # Index 1: a list of [frequency, flux of source at this frequncy]
+    data = []
     for source in sources:
-        source_data = []
-        for freq in _frange(minx, maxx, 0.01):
-            freq_flux = [float("%.4f"%freq),
-                         float("%.7f"%(get_jy(source, float(freq))))]
-            source_data.append(freq_flux)
-        data.append((source, source_data))
+        source_fluxes = []
+        for freq in _frange(minf, maxf, 0.01):
+            freq_flux = [float("%.4f" % freq),
+                         float("%.7f" % (get_jy(source, float(freq))))]
+            source_fluxes.append(freq_flux)
+        data.append((source, source_fluxes))
 
+    # Create a new Chart instance and define the title and other necessry
+    # chart elements.
     chart = qc.Chart()
     if len(sources) == 1:
         chart.set_title(sources[0])
     else:
         chart.set_title('Multiple Sources')
-    chart.set_subtitle('Based on Perley and Butler, 2016: https://arxiv.org/pdf/1609.05940.pdf')
+    chart.set_subtitle(
+        'Based on Perley and Butler, 2016: https://arxiv.org/pdf/1609.05940.pdf')
     chart.set_xaxis('logarithmic', 'Frequency in GHz')
     if y_axis_linear is True:
         chart.set_yaxis('linear', 'Jy')
@@ -170,31 +197,35 @@ def create_chart(sources, minx, maxx, y_axis_linear=False):
 
     if len(sources) == 1:
         chart.set_tooltip({
-                'crosshairs' : 'true',
-                'shared' : 'true',
-                'headerFormat' : '{point.x:.3f} GHz<br>',
-                'pointFormat' : '{point.y:.1f} Jy<br>',
-            })
+            'crosshairs': 'true',
+            'shared': 'true',
+            'headerFormat': '{point.x:.3f} GHz<br>',
+            'pointFormat': '{point.y:.1f} Jy<br>',
+        })
     else:
         chart.set_tooltip({
-                'crosshairs' : 'true',
-                'shared' : 'true',
-                'headerFormat' : '<b>[Multiple Sources] {point.key:.2f}</b> GHz: <br>',
-                'pointFormat' : '<b>{series.name}:</b> {point.y:.1f} Jy<br>',
-            })
+            'crosshairs': 'true',
+            'shared': 'true',
+            'headerFormat': '<b>[Multiple Sources] {point.key:.2f}</b> GHz: <br>',
+            'pointFormat': '<b>{series.name}:</b> {point.y:.1f} Jy<br>',
+        })
 
+    # Set the chart size
     chart.set_width(800)
     chart.set_height(500)
     marker = {'marker': {'symbol': 'circle', 'radius': 0}}
 
+    # Add the data series to the chart
     for source_data in data:
         series = qc.Series(source_data[0], source_data[1], marker)
         chart.add_series(series)
 
+    # Return the chart instance.
     return chart
 
+
 def main():
-    """Execute main function."""
+    """Main function for the flux_densities script."""
 
     parser = argparse.ArgumentParser(description='Using techniques \
             described in Perley and Butler, 2016: \
@@ -251,9 +282,9 @@ def main():
     sources_lowercase = [source.lower() for source in get_sources()]
     for source in sources:
         if source.lower() not in sources_lowercase:
-            print("Error: %s is not a valid source name. Valid names are:"%source)
-            for source in get_sources():
-                print(source)
+            print("Error: %s is not a valid source name. Valid names are:" % source)
+            for source_to_print in get_sources():
+                print(source_to_print)
             sys.exit(0)
 
     # Optionally list all the sources then exit.
@@ -268,38 +299,33 @@ def main():
             freq_mhz = args.flux
             flux_jy = get_jy(source, freq_mhz/1000.0)
             print("Flux of %s @ %0.2f MHz is %0.2f Jy" %
-                (source, freq_mhz, flux_jy))
+                  (source, freq_mhz, flux_jy))
         sys.exit(0)
 
     if args.chart is None:
         return
 
-    # Create a chart of the one source specified by the user.
-    #html_filename = source_name.replace(" ", "_").lower() + "_flux.html"
-    """
-    html_filename = args.html
-    if html_filename is None:
-        temporary_file = tempfile.NamedTemporaryFile(suffix='.html', delete=False, mode='w')
-        html_filename = temporary_file.name
-    """
+    # Create a chart of the source(s) specified by the user.
     chart = create_chart(sources, args.minf, args.maxf, args.linear)
-    page = qc.Page('Chart Test', 'Flux Densities')
-    page.add_chart(chart)
-    page.display_in_browser(args.html, args.typebrowser)
-    """
-    print('HTML file is %s'%html_filename)
-    if args.browser is True:
-        if args.html is None:
-            webbrowser.get(args.typebrowser).open("file://%s"%html_filename, 1)
-            #webbrowser.open("file://%s"%html_filename, 1)
-            print('Sleeping 5 seconds to allow browser to render the chart...')
-            time.sleep(5)
-            os.unlink(html_filename)
-            print('%s deleted. Bye!'%html_filename)
-        else:
-            webbrowser.open("file:%s"%os.path.join(os.getcwd(), html_filename), 1)
-            print('HTML file fullpath: %s, Bye!'%os.path.join(os.getcwd(), html_filename))
-    """
 
+    # Create a Page and add the chart
+    page = qc.Page('Flux Densities')
+    page.add_chart(chart)
+
+    # Display the chart in a browser if --browser specisied.
+    if args.browser is True:
+        page.display_in_browser(args.html, args.typebrowser)
+        return
+    # Else simply save the HTML file.
+    if args.html is None:
+        print("Invocation error:")
+        print("The --html option not used to specify an")
+        print("output HTML file. Perhaps you forgot the --browser")
+        print("option to display the graph in a browser. Try again.\n")
+        return
+    page.to_file(args.html)
+    print("Chart saved to %s, ready to view in a browser.\n" % args.html)
+
+    # Done!
 if __name__ == '__main__':
     main()
