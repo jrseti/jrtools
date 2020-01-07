@@ -31,6 +31,7 @@
 
 """
 import os
+import sys
 
 import webbrowser
 import tempfile
@@ -73,6 +74,10 @@ class Page():
                                                      chart.width, chart.height)
             html_text += Page._indent(2, "<script>\n")
             html_text += Page._indent(4, '$(function () {\n')
+
+            for var_line in chart.get_series_js_var_statements():
+                html_text += '%s\n'%Page._indent(6, var_line) 
+
             html_text += Page._indent(
                 6, '$("#container%d").highcharts(\n' % index)
             for line in chart.to_json_string().split('\n'):
@@ -218,6 +223,7 @@ class Chart():
 
     def __init__(self):
         self._chart = {}
+        self._series_instances_list = list()
         self._set_defaults()
         self._width = 800
         self._height = 400
@@ -373,6 +379,7 @@ class Chart():
 
         series_list = self._chart.get('series', list())
         series_list.append(series.series)
+        self._series_instances_list.append(series)
         self._chart['series'] = series_list
 
     def to_json_string(self):
@@ -387,10 +394,23 @@ class Chart():
 
         if 'series' in self._chart:
             json_string = json.dumps(self._chart, indent=2)
+            json_string = Series.data_placeholder_replace(json_string, self._series_instances_list)
             return json_string
         raise Exception(
             'The series has not been defined. Cannot create a valid chart.')
 
+    def get_series_js_var_statements(self):
+        """Get a list of javascript var statements for the data in each
+
+        Return:
+            list(str): list of var statements for insertion into javascript.
+
+        """
+
+        if 'series' in self._chart:
+            return Series.get_js_var_definitions(self._series_instances_list)
+        raise Exception(
+            'The series has not been defined. Cannot create a valid chart.')
 
 class Series:
     """Class to construct and represent one data series for a chart.
@@ -409,12 +429,32 @@ class Series:
             marker (dict): Optional marker definition for the series.
 
         """
-
         self._series = dict()
         self._series['name'] = name
-        self._series['data'] = data
+        self._series['data'] = '%s_placeholder'%name.replace(' ', '_')
+        self._data = data
         if marker is not None:
             self._series['marker'] = marker
+
+    def get_name(self):
+        """Get the name of this series
+
+        Return:
+            str: the name of this series.
+
+        """
+
+        return self._series['name']
+
+    def get_data_as_str(self):
+        """Get the data, which is a list, as a string.
+
+        Return:
+            str: the data list as a string.
+
+        """
+
+        return str(self._data)
 
     @property
     def series(self):
@@ -439,6 +479,79 @@ class Series:
 
         self._series['type'] = series_type
 
+    def javascript_var_name(self):
+        """Get the variable name for this variable in the javascript
+        representation.
+
+        Returns:
+            str: the variable ae of this series to use in javascript.
+
+        """
+
+        var_name = '%s_data'%self._series['name'].replace(' ', '_')
+        if var_name[0].isdigit() is True:
+            var_name = '_' + var_name
+        return var_name
+
+
+    def to_javascript_var(self):
+        """Convert this series to a var definition for Javascript.
+
+        Example:
+            if:
+                self._series['name'] = 'xyz'
+                and self._data = [[1,1],[2,2]]
+            returns:
+                'var series1_xyz = [[1,1],[2,2]];'
+
+        Args:
+            var_name_prefix (str): the string for the variable prefix.
+
+        Returns:
+            str: a var definition for this series' data.
+        
+        """
+
+        return 'var %s = %s;'%(self.javascript_var_name(), self.get_data_as_str())
+
+    @staticmethod
+    def get_js_var_definitions(list_of_series):
+        """Given a list of Series instances create list of var statements
+        for javascript code insertion.
+
+        Args:
+            list_of_series (list): a list od Series instances.
+
+        Returns:
+            list(str): javascript var statements.
+
+        """
+
+        var_defs = list()
+        for series in list_of_series:
+            var_defs.append(series.to_javascript_var())
+
+        return var_defs
+
+    @staticmethod
+    def data_placeholder_replace(json_string, list_of_series):
+        """Given a list of Series instances substitute the placeholders in the
+        json text.
+
+        Args:
+            json_string (str): a Chart json representation as a str.
+            list_of_series (list): a list od Series instances.
+
+        Returns:
+            str: the json_string with the series popuplated with data = var name.
+
+        """
+
+        for series in list_of_series:
+            placeholder_var_name = '%s_placeholder'%(series.get_name().replace(' ', '_'))
+            json_string = json_string.replace('"%s"'%placeholder_var_name, series.javascript_var_name()) 
+
+        return json_string
 
 def main():
     """Main function for testing."""
@@ -454,9 +567,10 @@ def main():
     chart.add_series(series2)
     page = Page('Chart Test')
     page.add_chart(chart)
-    page.add_chart(chart)
+    #page.add_chart(chart)
     print(page.to_html())
 
+    """
     # Function to test the main functionality of this module.
     data = [[1, 1],
             [2, 2], [3, 3]]  # yapf: disable
@@ -474,6 +588,7 @@ def main():
     # print(page.to_html())
 
     page.to_file("testxx.html")
+    """
 
 
 if __name__ == '__main__':
