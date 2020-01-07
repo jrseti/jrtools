@@ -31,12 +31,10 @@
 
 """
 import os
-import sys
 
 import webbrowser
 import tempfile
 import time
-import copy
 import json
 
 
@@ -76,7 +74,7 @@ class Page():
             html_text += Page._indent(4, '$(function () {\n')
 
             for var_line in chart.get_series_js_var_statements():
-                html_text += '%s\n'%Page._indent(6, var_line) 
+                html_text += '%s\n' % Page._indent(6, var_line)
 
             html_text += Page._indent(
                 6, '$("#container%d").highcharts(\n' % index)
@@ -394,7 +392,8 @@ class Chart():
 
         if 'series' in self._chart:
             json_string = json.dumps(self._chart, indent=2)
-            json_string = Series.data_placeholder_replace(json_string, self._series_instances_list)
+            json_string = Series.data_placeholder_replace(
+                json_string, self._series_instances_list)
             return json_string
         raise Exception(
             'The series has not been defined. Cannot create a valid chart.')
@@ -411,6 +410,7 @@ class Chart():
             return Series.get_js_var_definitions(self._series_instances_list)
         raise Exception(
             'The series has not been defined. Cannot create a valid chart.')
+
 
 class Series:
     """Class to construct and represent one data series for a chart.
@@ -431,7 +431,7 @@ class Series:
         """
         self._series = dict()
         self._series['name'] = name
-        self._series['data'] = '%s_placeholder'%name.replace(' ', '_')
+        self._series['data'] = '%s_placeholder' % name.replace(' ', '_')
         self._data = data
         if marker is not None:
             self._series['marker'] = marker
@@ -488,11 +488,10 @@ class Series:
 
         """
 
-        var_name = '%s_data'%self._series['name'].replace(' ', '_')
+        var_name = '%s_data' % self._series['name'].replace(' ', '_')
         if var_name[0].isdigit() is True:
             var_name = '_' + var_name
         return var_name
-
 
     def to_javascript_var(self):
         """Convert this series to a var definition for Javascript.
@@ -509,10 +508,10 @@ class Series:
 
         Returns:
             str: a var definition for this series' data.
-        
+
         """
 
-        return 'var %s = %s;'%(self.javascript_var_name(), self.get_data_as_str())
+        return 'var %s = %s;' % (self.javascript_var_name(), self.get_data_as_str())
 
     @staticmethod
     def get_js_var_definitions(list_of_series):
@@ -548,10 +547,13 @@ class Series:
         """
 
         for series in list_of_series:
-            placeholder_var_name = '%s_placeholder'%(series.get_name().replace(' ', '_'))
-            json_string = json_string.replace('"%s"'%placeholder_var_name, series.javascript_var_name()) 
+            placeholder_var_name = '%s_placeholder' % (
+                series.get_name().replace(' ', '_'))
+            json_string = json_string.replace(
+                '"%s"' % placeholder_var_name, series.javascript_var_name())
 
         return json_string
+
 
 def main():
     """Main function for testing."""
@@ -567,29 +569,8 @@ def main():
     chart.add_series(series2)
     page = Page('Chart Test')
     page.add_chart(chart)
-    #page.add_chart(chart)
+    # page.add_chart(chart)
     print(page.to_html())
-
-    """
-    # Function to test the main functionality of this module.
-    data = [[1, 1],
-            [2, 2], [3, 3]]  # yapf: disable
-    marker = {'marker': {'symbol': 'circle', 'radius': 0}}
-    series = Series('test series', data, marker)
-    chart = Chart()
-    chart.set_title("My First Chart")
-    chart.add_series(series)
-    page = Page('Chart Test')
-    page.add_chart(chart)
-    chart2 = copy.deepcopy(chart)
-    chart2.set_width(800)
-    chart2.set_height(400)
-    page.add_chart(chart2)
-    # print(page.to_html())
-
-    page.to_file("testxx.html")
-    """
-
 
 if __name__ == '__main__':
     main()
