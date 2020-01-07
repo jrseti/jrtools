@@ -8,20 +8,22 @@
 
    Example that creates the text of an HTML file containing a chart:
 
+    import quick_chart as qc
+
     #Create a Chart object and set the title
-    chart = Chart()
+    chart = qc.Chart()
     chart.set_title("My First Chart")
 
     #Create a data series
     data = [[1, 1], [2, 2], [3, 3]]
     marker = {'marker': {'symbol': 'circle', 'radius': 0}}
-    series = Series('test series', data, marker)
+    series = qc.Series('test series', data, marker)
 
     #Add the series to the chart
     chart.add_series(series)
 
     #Create an HTML page object
-    page = Page('Chart Test', 'This is my chart test', 'chart_test1.html')
+    page = qc.Page('Chart Test')
 
     #Add the chart to the HTML page
     page.add_chart(chart)
@@ -39,9 +41,15 @@ import json
 
 
 class Page():
-    """Class to represent one HTML page in which the charts will reside. """
+    """Class to represent one HTML page in which the charts will reside. 
+    
+    Args:
+        title_text (str): The title of this page. Will display in an h1 tag.
+
+    """
 
     def __init__(self, title_text):
+
         self._title_text = title_text
         self._charts = []
 
@@ -217,7 +225,7 @@ class Page():
 
 
 class Chart():
-    """Class to construct and represent one chart."""
+    """Class to construct and represent one chart.  """
 
     def __init__(self):
         self._chart = {}
