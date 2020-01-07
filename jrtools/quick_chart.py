@@ -39,13 +39,11 @@ import copy
 import json
 
 
-
 class Page():
     """Class to represent one HTML page in which the charts will reside. """
 
-    def __init__(self, title_text, heading_text):
-        self.title_text = title_text
-        self._heading_text = heading_text
+    def __init__(self, title_text):
+        self._title_text = title_text
         self._charts = []
 
     def add_chart(self, new_chart):
@@ -71,7 +69,8 @@ class Page():
         for index, chart in enumerate(self._charts):
             html_text += '  <div id="container%d" style="display:block;'\
                          'margin-left:auto;margin-right: auto; width:%dpx;'\
-                         'height:%dpx;"></div>\n'%(index, chart.width, chart.height)
+                         'height:%dpx;"></div>\n' % (index,
+                                                     chart.width, chart.height)
             html_text += Page._indent(2, "<script>\n")
             html_text += Page._indent(4, '$(function () {\n')
             html_text += Page._indent(
@@ -103,15 +102,15 @@ class Page():
             out_file.write(html_text)
             out_file.close()
 
-    def display_in_browser(self, html_filename=None, 
+    def display_in_browser(self, html_filename=None,
                            browser_type=None, verbose=True, delay=5):
         """Display this HTML page in a browser.
 
         The following steps are performed:
 
             1. The text of the HTML page containing the chart(s) is created.
-            2. If the value of html_filename is None create and open a 
-               temporary file and write the HTML text to this file. 
+            2. If the value of html_filename is None create and open a
+               temporary file and write the HTML text to this file.
             3. If the value of html_filename is not None create the file
                and write the HTML text to this file.
             4. Using the webbrowser module load the HTML file in a browser.
@@ -119,11 +118,11 @@ class Page():
                remove this file.
 
         Args:
-            html_filename (str): The name of the html file to create for 
+            html_filename (str): The name of the html file to create for
                loading in a browser. If none, create a temporary file that
                is deleted after displayed.
             browser_type (str): Specify the brower type to display the file.
-               If no value is provided the user's default browser is will 
+               If no value is provided the user's default browser is will
                used. See https://docs.python.org/2/library/webbrowser.html
                for a list of available browsers. safari, chrome, and firefox
                have been tested.
@@ -140,28 +139,29 @@ class Page():
 
         # If html_filename is None, create the temporary file and load it.
         if html_filename is None:
-            temporary_file = tempfile.NamedTemporaryFile(suffix='.html', delete=False, mode='w')
+            temporary_file = tempfile.NamedTemporaryFile(
+                suffix='.html', delete=False, mode='w')
             html_filename = temporary_file.name
             self.to_file(html_filename)
 
-            url = "file://%s"%html_filename
+            url = "file://%s" % html_filename
             webbrowser.get(browser_type).open(url, 1)
             if verbose is True:
-                print('HTML file URL: %s'%url)
+                print('HTML file URL: %s' % url)
                 print('Sleeping 5 seconds to allow browser to render the chart...')
-            time.sleep(5)
+            time.sleep(delay)
             os.unlink(html_filename)
             if verbose is True:
-                print('%s deleted.'%html_filename)
+                print('%s deleted.' % html_filename)
 
             return
 
         # If html_filename is a filename (not None), load the file into a browser.
         self.to_file(html_filename)
-        url = "file:///%s"%os.path.join(os.getcwd(), html_filename)
+        url = "file:///%s" % os.path.join(os.getcwd(), html_filename)
         webbrowser.get(browser_type).open(url, 1)
         if verbose is True:
-            print('HTML file URL: %s'%url)
+            print('HTML file URL: %s' % url)
 
     def _get_header_text(self):
         """Create the HTML file segment before the charts.
@@ -175,12 +175,12 @@ class Page():
         header_text += '<html>\n'
         header_text += '<head>\n'
         header_text += '<script src="http://ajax.googleapis.com/ajax/'\
-                        'libs/jquery/1.8.2/jquery.min.js"></script>\n'
+            'libs/jquery/1.8.2/jquery.min.js"></script>\n'
         header_text += '<script src="http://code.highcharts.com/highcharts.js"></script>\n'
         header_text += '</head>\n'
         header_text += '<body>\n'
-        if self._heading_text is not None:
-            header_text += '<h1 style="text-align:center;">%s</h1>\n'%self._heading_text
+        if self._title_text is not None:
+            header_text += '<h1 style="text-align:center;">%s</h1>\n' % self._title_text
 
         return header_text
 
@@ -215,6 +215,7 @@ class Page():
 
 class Chart():
     """Class to construct and represent one chart."""
+
     def __init__(self):
         self._chart = {}
         self._set_defaults()
@@ -266,7 +267,6 @@ class Chart():
         """
 
         self._height = height
-
 
     def set_chart(self, chart_type='line', zoom_type='x'):
         """Set the type and optionally the zoom type of this chart.
@@ -439,40 +439,42 @@ class Series:
 
         self._series['type'] = series_type
 
-def main():
 
-    data = [[1,1],[2,2],[3,3]]
-    data2 = [[1,2],[2,3],[3,6]]
-    marker = { 'marker' : { 'symbol' : 'circle', 'radius' : 0 } }
+def main():
+    """Main function for testing."""
+
+    data = [[1, 1], [2, 2], [3, 3]]
+    data2 = [[1, 2], [2, 3], [3, 6]]
+    marker = {'marker': {'symbol': 'circle', 'radius': 0}}
     series = Series('test series', data, marker)
     series2 = Series('test series 2', data2, marker)
     chart = Chart()
     chart.set_title("My First Chart")
     chart.add_series(series)
     chart.add_series(series2)
-    page = Page('Chart Test', 'This is my chart test')
+    page = Page('Chart Test')
     page.add_chart(chart)
     page.add_chart(chart)
     print(page.to_html())
 
-    """Function to test the main functionality of this module."""
+    # Function to test the main functionality of this module.
     data = [[1, 1],
-            [2, 2], [3, 3]]  #yapf: disable
+            [2, 2], [3, 3]]  # yapf: disable
     marker = {'marker': {'symbol': 'circle', 'radius': 0}}
     series = Series('test series', data, marker)
     chart = Chart()
     chart.set_title("My First Chart")
     chart.add_series(series)
-    page = Page('Chart Test', 'This is my chart test')
+    page = Page('Chart Test')
     page.add_chart(chart)
     chart2 = copy.deepcopy(chart)
     chart2.set_width(800)
     chart2.set_height(400)
     page.add_chart(chart2)
-    #print(page.to_html())
-
+    # print(page.to_html())
 
     page.to_file("testxx.html")
+
 
 if __name__ == '__main__':
     main()
