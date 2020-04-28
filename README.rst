@@ -1,7 +1,7 @@
 *******
 jrtools
 *******
-Various Python tools and applications by Jon Richards
+Various Python tools and applications by Jon Richards.
 
 jrtools.flux_densities
 ======================
